@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Witter</title>
+<meta charset="UTF-8">
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript">
+    $(function() {
+
+    var conn;
+    var msg = $("#msg");
+    var log = $("#log");
+
+    function appendLog(msg) {
+        var d = log[0]
+        msg.insertAfter($('#weetinput'))
+        d.scrollTop = 0;
+    }
+
+    $("#weetinput").submit(function() {
+        if (!conn) {
+            return false;
+        }
+        if (!msg.val()) {
+            return false;
+        }
+        conn.send(JSON.stringify( { text: msg.val() }));
+        msg.val("");
+        return false
+    });
+
+    if (window["WebSocket"]) {
+        conn = new WebSocket("ws://{{$}}/ws");
+        conn.onclose = function(evt) {
+            appendLog($("<div><b>Connection closed.</b></div>"));
+        }
+        conn.onmessage = function(evt) {
+            var m = JSON.parse(evt.data);
+            var weet = $('<div class="weetbox">');
+            var weetinfo = $('<div class="weet info">');
+            var user = $('<div class="weet user">');
+            user.append($('<img class="weet avatar" src="img/' + m.Sender.Avatar + '">'))
+            user.append(document.createTextNode(m.Sender.Name));
+            var time = $('<div class="weet time">');
+            var sent = new Date(m.Time)
+            time.append(document.createTextNode(sent.toLocaleString()))
+            var content = $('<div class="weet content">');
+            content.text(m.Text);
+            weet.append(weetinfo);
+            weetinfo.append(user);
+            weetinfo.append(time);
+            weet.append(content);
+            appendLog(weet);
+        }
+        conn.onerror = function(evt) {
+            appendLog($("<div><b>" + err.data + "</b></div>"));
+        }
+    } else {
+        appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
+    }
+    });
+</script>
+<style type="text/css">
+html {
+    overflow: hidden;
+}
+
+body {
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#log {
+    margin: 0;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    position: absolute;
+    top: 0.5em;
+    left: 0.5em;
+    right: 0.5em;
+    bottom: 0.5em;
+    overflow: auto;
+}
+
+#form {
+    display: block;
+}
+
+.weetbox {
+    display: block;
+    overflow: hidden;
+    border-radius: 1em;
+    background-color: #dfd;
+    box-shadow: 0.3em 0.3em 0.3em #ddd;
+    width: 50em;
+    padding: 1em;
+    margin: 1em;
+}
+
+.weet.content {
+    font-family: sans;
+    font-size: 2em;
+    margin-left: 1em;
+}
+
+.weet.info {
+    display: block;
+    width: 10em;
+    border: solid 1px black;
+    float: left;
+    margin-right: 1em;
+}
+
+.weet.time {
+    font-size: 0.8em;
+}
+
+.weet.avatar {
+    max-width: 5em;
+    max-height: 5em;
+}
+
+#sidebar {
+    position: fixed;
+    right: 0;
+    height: 100%;
+    width: 20%;
+    background: #efe;
+    border-left: solid 1px #aaa;
+}
+
+</style>
+</head>
+<body>
+    <div id="log">
+        <form id="weetinput" action="#" class="weetbox">
+            <textarea type="text" id="msg" cols="60" rows="5" placeholder="Neuen Weet verfassen"></textarea>
+            <input type="submit" value="Send">
+        </form>
+    </div>
+    <div id="sidebar">
+    </div>
+</body>
+</html>
